@@ -1,14 +1,11 @@
 ---
-title: "Medium Data in the Tidyverse"
-author: "Mike Frank"
-date: "6/22/2017, updated 10/14/2019"
-output: 
-  html_document:
-    toc: true
-    toc_float: true
+title: "R Tutorial"
+author: "Griffin Dietz, adapted from Mike Frank's Tidyverse Tutorial"
+date: "11/14/2019"
+output: html_document
 ---
 
-Starting note: The best reference for this material is Hadley Wickham's [R for data scientists](http://r4ds.had.co.nz/). My contribution here is to translate this reference for psychology.
+Starting note: The best reference for this material is Hadley Wickham's [R for data scientists](http://r4ds.had.co.nz/)
 
 If you have tidyverse installed, you can `knit` the tutorial into an HTML document for better readability by pressing the `knit` button at the top.
 
@@ -25,7 +22,7 @@ By the end of this tutorial, you will know:
 + What "tidy data" is and why it's an awesome format
 + How to do some stuff with tidy data
 + How to get your data to be tidy
-+ Some tips'n'tricks for dealing with "medium data" in R
++ How to run some wdiely-used statistical analyses in R
 
 In order to do that, we'll start by introducing the concepts of **tidy data** and **functions and pipes**.
 
@@ -53,11 +50,15 @@ That's not very useful yet, but when you start **nesting** functions, it gets be
 
 ```{r}
 gpm <- function (mpg) {1/mpg} # gallons per mile, maybe better than miles per gallon. 
+```
 
+**Exercise.** Rewrite the following with pipes. Run this code chunk to verify they output the same result.
+```{r}
 round(mean(gpm(mtcars$mpg)), digits = 2)
 
-# how do we do this with pipes? 
+# Rewrite piped version here
 ```
+
 This can be super helpful for writing strings of functions so that they are readable and distinct. We'll be doing a lot of piping of functions with multiple arguments later, and it will really help keep our syntax simple. 
 
 <!-- ----------------------------------------------------------------------- -->
@@ -69,7 +70,7 @@ Let's take a psychological dataset. Here are the raw data from [Stiller, Goodman
 
 These data are tidy: each row describes a single trial, each column describes some aspect of tha trial, including their id (`subid`), age (`age`), condition (`condition` - "label" is the experimental condition, "No Label" is the control), item (`item` - which thing Furble was trying to find). 
 
-We are going to manipulate these data using "verbs" from `dplyr`. I'll only teach four verbs, the most common in my workflow (but there are many other useful ones):
+We are going to manipulate these data using "functions" from `dplyr`. I'll only teach four functions, the most common in my workflow (but there are many other useful ones):
 
 + `filter` - remove rows by some logical condition
 + `mutate` - create new columns 
@@ -83,13 +84,13 @@ sgf <- read_csv("data/stiller_scales_data.csv")
 sgf
 ```
 
-Inspect the various variables before you start any analysis. Lots of people recommend `summary` but TBH I don't find it useful. 
+Inspect the various variables before you start any analysis. You can use `summary` to see, well, a summary of each variable. 
 
 ```{r}
 summary(sgf)
 ```
 
-I prefer interactive tools like `View` or `DT::datatable` (which I really like, especially in knitted reports).
+I personally prefer interactive tools like `View` that allow you to see the full data table.
 
 ```{r, eval=FALSE}
 View(sgf)
@@ -97,33 +98,33 @@ View(sgf)
 
 ## Filtering & Mutating
 
-There are lots of reasons you might want to remove *rows* from your dataset, including getting rid of outliers, selecting subpopulations, etc. `filter` is a verb (function) that takes a data frame as its first argument, and then as its second takes the **condition** you want to filter on. 
+There are lots of reasons you might want to remove *rows* from your dataset, including getting rid of outliers, selecting subpopulations, etc. `filter` is a function that takes a data frame as its first argument, and then as its second takes the **condition** you want to filter on. 
 
-So if you wanted to look only at two year olds, you could do this. (Note you can give two conditions, could also do `age > 2 & age < 3`). (equivalent: `filter(sgf, age > 2, age < 3)`)
+So if you wanted to look only at two year olds, you could do this. (Note you can give two conditions, could also do `age >= 2 & age < 3`). (equivalent: `filter(sgf, age >= 2, age < 3)`)
 
 Note that we're going to be using pipes with functions over data frames here. The way this works is that:
 
-+ `tidyverse` verbs always take the data frame as their first argument, and
++ `tidyverse` functions always take the data frame as their first argument, and
 + because pipes pull out the first argument, the data frame just gets passed through successive operations
 + so you can read a pipe chain as "take this data frame and first do this, then do this, then do that."
 
-This is essentially the huge insight of `dplyr`: you can chain verbs into readable and efficient sequences of operations over dataframes, provided 1) the verbs all have the same syntax (which they do) and 2) the data all have the same structure (which they do if they are tidy). 
+This is essentially the huge insight of `dplyr`: you can chain functions into readable and efficient sequences of operations over dataframes, provided 1) the functions all have the same syntax (which they do) and 2) the data all have the same structure (which they do if they are tidy). 
 
 OK, so filtering:
 
 ```{r}
 sgf %>%
-  filter(age > 2, 
+  filter(age >= 2, 
          age < 3) 
 ```
 
-**Exercise.** Filter out only the "face" trial in the "Label" condition.
+**Exercise.** Filter out only the "faces" trial in the "Label" condition. Any rows that are not "faces" trials in the "Label" condition should remain in the table.
 
 ```{r}
 
 ```
 
-Next up, *adding columns*. You might do this perhaps to compute some kind of derived variable. `mutate` is the verb for these situations - it allows you to add a column. Let's add a discrete age group factor to our dataset.
+Next up, *adding columns*. You might do this perhaps to compute some kind of derived variable. `mutate` is the function for these situations - it allows you to add a column. Let's add a discrete age group factor to our dataset.
 
 ```{r}
 sgf <- sgf %>%
@@ -132,9 +133,15 @@ sgf <- sgf %>%
 head(sgf$age_group)
 ```
 
+**Exercise.** Now let's imagine we want to slit the data into two age groups: younger (2 and 3 year olds) and older (4 and 5 year olds). Create a new factor called age_split that has the values "younger" and "older" according to these specifications.
+```{r}
+
+```
+
+
 ## Standard descriptives using `summarise` and `group_by`
 
-We typically describe datasets at the level of subjects, not trials. We need two verbs to get a summary at the level of subjects: `group_by` and `summarise` (kiwi spelling). Grouping alone doesn't do much.
+We typically describe datasets at the level of subjects, not trials. We need two functions to get a summary at the level of subjects: `group_by` and `summarise` (kiwi spelling). Grouping alone doesn't do much.
 
 ```{r}
 sgf %>%
@@ -160,7 +167,7 @@ What `summarise` does is to *apply a function* to a part of the dataset to creat
 sgf %>%
   summarise(correct = mean(correct))
 ```
-Note the syntax here: `summarise` takes multiple  `new_column_name = function_to_be_applied_to_data(data_column)` entries in a list. Using this syntax, we can create more elaborate summary datasets also:
+Note the syntax here: `summarise` takes multiple `new_column_name = function_to_be_applied_to_data(data_column)` entries in a list. Using this syntax, we can create more elaborate summary datasets also:
 
 ```{r}
 sgf %>%
@@ -168,7 +175,7 @@ sgf %>%
             n_observations = length(subid))
 ```
 
-Where these two verbs shine is in combination, though. Because `summarise` applies functions to columns in your *grouped data*, not just to the whole dataset!
+Where these two functions shine is in combination, though. Because `summarise` applies functions to columns in your *grouped data*, not just to the whole dataset!
 
 So we can group by age or condition or whatever else we want and then carry out the same procedure, and all of a sudden we are doing something extremely useful!
 
@@ -202,7 +209,7 @@ ggplot(sgf_means,
 
 Reference: [R4DS Chapter 12](http://r4ds.had.co.nz/tidy-data.html)
 
-Psychological data often comes in two flavors: *long* and *wide* data. Long form data is *tidy*, but that format is less common. It's much more common to get *wide* data, in which every row is a case (e.g., a subject), and each column is a variable. In this format multiple trials (observations) are stored as columns. This can go a bunch of ways, for example, the most common might be to have subjects as rows and trials as columns. 
+Data often comes in two flavors: *long* and *wide* data. Long form data is *tidy*, but that format is less common. It's much more common to get *wide* data, in which every row is a case (e.g., a subject), and each column is a variable. In this format multiple trials (observations) are stored as columns. This can go a bunch of ways, for example, the most common might be to have subjects as rows and trials as columns. 
 
 For example, let's take a look at a wide version of the `sgf` dataset above. 
 
@@ -211,11 +218,11 @@ sgf_wide <- read_csv("data/sgf_wide.csv")
 head(sgf_wide)
 ```
 
-The two main verbs for tidying are `pivot_longer` and `pivot_wider`. (There are lots of others in the `tidyr` package if you want to split or merge columns etc.). 
+The two main functions for tidying are `gather` and `spread`. (There are lots of others in the `tidyr` package if you want to split or merge columns etc.). 
 
-Here, we'll just show how to use `pivot_longer` to make the data tidy; we'll try to make a single column called `item` and a single column called `correct` rather than having four different columns, one for each item. 
+Here, we'll just show how to use `gather` to make the data tidy; we'll try to make a single column called `item` and a single column called `correct` rather than having four different columns, one for each item. 
 
-`pivot_longer` takes three arguments:
+`gather` takes three arguments:
 
 - a `tidyselect` way of getting columns. This is the columns you want to make longer. You can select them by name (e.g. `beds, faces, houses, pasta`), you can use numbers (e.g., `5:8`), or you can use markers like `starts_with(...)`.
 - a `names_to` argument. this argument is the **name of the column names**. in this case, the column names are items, so the "missing label" for them is `item`.
@@ -225,148 +232,106 @@ Let's try it:
 
 ```{r}
 sgf_tidy <- sgf_wide %>% 
-  pivot_longer(beds:pasta, 
-               names_to = "item", 
-               values_to = "correct")
+  gather(beds:pasta, 
+               key = "item", 
+               value = "correct")
 sgf_tidy
 ```
-We can compare this to `sgf` and see that we've recovered the original long form. (This is good, because I used `pivot_wider` to *make* the `sgf_wide` dataframe). 
+We can compare this to `sgf` and see that we've recovered the original long form. (This is good, because I used `spread` to *make* the `sgf_wide` dataframe). 
 
-**Exercise.** Use `pivot_wider` to try and make `sgf_wide` from `sgf`. The two arguments you need are `names_from` and `values_from`, which specify the names and values (just like in `pivot_longer`).   
+**Exercise.** Use `spread` to try and make `sgf_wide` from `sgf`. The two arguments you need are `key` and `value`, which specify the names and values (just like in `gather`). 
+```{r}
+
+```
 
 <!-- ----------------------------------------------------------------------- -->
-# Extras
+# Analyses
 
 These extras are fun things to go through at the end of the tutorial, time permitting. Because they require more data and packages, they are set by default not to evaluate if you knit the tutorial. 
 
-## A bigger worked example: Wordbank data
+## T-tests
+T tests allow us to compare means between groups. The syntax of a t-test is t.test(y~x,data) where y is the dependent variable and x is the independent variable. That is, is there a difference in y between the two groups in x.
 
-We're going to be using some data on vocabulary growth that we load from the Wordbank database. [Wordbank](http://wordbank.stanford.edu) is a database of children's language learning. 
+Let's take a look at the ToothGrowth dataset. It contains the results from an experiment studying the effect of vitamin C on tooth growth in 60 Guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, (orange juice or ascorbic acid (a form of vitamin C and coded as VC).
 
-We're going to look at data from the English Words and Sentences form. These data describe the repsonses of parents to questions about whether their child says 680 different words. 
-
-`tidyverse` really shines in this context. 
-
-```{r, eval=FALSE}
-# to avoid dependency on the wordbankr package, we cache these data. 
-# ws <- wordbankr::get_administration_data(language = "English", 
-#                                          form = "WS")
-
-ws <- read_csv("data/ws.csv")
+```{r}
+head(ToothGrowth)
 ```
 
-Take a look at the data that comes out. 
+Imagine we want to determine if there is a difference in tooth growth between the two delivery methods.
 
-```{r, eval=FALSE}
-DT::datatable(ws)
+First, let's visualize the data.
+```{r}
+ggplot(ToothGrowth,aes(x = supp, y = len)) + 
+  stat_summary(fun.y=mean, geom="bar")
 ```
 
+Next, we can use a t-test to determine if there is a significant difference in tooth growth between the two delivery methods.
 
-```{r, eval=FALSE}
-ggplot(ws, aes(x = age, y = production)) + 
+```{r}
+t.test(len ~ supp, data=ToothGrowth) 
+```
+We can see here that the p-value is >.05, which is the significance level (alpha) we've chosen that allows us to reject the null hypothesis. Therefore we cannot conclude that delivery method had an impact on tooth length.
+
+## ANOVA
+Let's start by taking a look at the Iris dataset, a commonly used example dataset built into the dplyr package. It contains three plant species (setosa, virginica, versicolor) and four features measured for each sample.
+```{r}
+head(iris)
+```
+
+ANOVA allow us to compare means between more than 2 groups. The syntax of an ANOVA is very similar to that of a t-test: aov(y~x,data).
+
+Imagine we want to determine if there is a difference in sepal length between the three species:
+First, let's visualize the data.
+```{r}
+ggplot(iris,aes(x = Species, y = Sepal.Length)) + 
+  stat_summary(fun.y=mean, geom="bar")
+```
+
+Next, we can use an ANOVA to determine if there is a significant difference in sepal width between the three species.
+```{r}
+sepal_width_anova <- aov(Sepal.Width ~ Species, data=iris) 
+summary(sepal_width_anova)
+```
+We can see here that the p-value is <.05, which is the significance level (alpha) we've chosen that allows us to reject the null hypothesis. We can therefore accept the alternative hypothesis: the differences between at least one of the means is statistically significant. However, we cannot from this test determine which species differs fromt he others.
+
+One option is to use a Tukey's Honest Significant Difference post-hoc test to conduct pair-wise comparisons between each group.
+```{r}
+TukeyHSD(sepal_width_anova)
+```
+
+We can see here that the p adj value (adjusted p value) is less than our alpha of .05 in all three pairwise comparisons. This means there is a significant difference between all three species' means.
+
+**Exercise.** Determine if there is a significant difference in petal length between the three species. First visualize the data. Then use an ANOVA to determine if there is a difference between any groups. If there is a difference, ise a post-hoc test to determine which groups differ.
+```{r}
+
+```
+
+## Linear Regression
+Finally let's take a look at the cars dataset. This dataset has the stopping distance of different cars (ft) and the speed that car was travelling (mph) before stopping.
+```{r}
+head(cars)
+```
+
+Let's see if we can predict stopping distance by speed. To do this we can use a linear regression, which allows us to build a model to predict the value of one continuos variable based on another continuous variable.
+
+But first, visualize the data!
+```{r}
+ggplot(cars,aes(x = speed, y = dist)) + 
   geom_point()
 ```
 
-Aside: How can we fix this plot? Suggestions from group? 
+Next, we can use a linear regression to determine if we can predict stopping distants by speed.
+```{r}
+model <- lm(dist~speed,cars)
+summary(model)
+```
+ 
+We can see here that the p-value is <.05, which is the significance level (alpha) we've chosen that allows us to reject the null hypothesis. We can therefore accept that we can predict stopping distance by speed. Furthermore, by examining the "Estimate" value, we can state that our model predicts that every time speed goes up by 1, the stopping distance will increase by 3.93.
 
-```{r, eval=FALSE}
-ggplot(ws, aes(x = age, y = production)) + 
-  geom_jitter(size = .5, width = .25, height = 0, alpha = .3)
+
+**Exercise.** Let's look back at the iris dataset. Can we predict sepal width based on sepal length? Don't forget to visualize the data.
+```{r}
+
 ```
 
-Ok, let's plot the relationship between sex and productive vocabulary, using `dplyr`.
-
-```{r, eval=FALSE}
-ggplot(ws, aes(x = age, y = production, col=sex)) + 
-  geom_jitter(size = .5, width = .25, height = 0, alpha = .3) + 
-  geom_smooth()
-```
-
-<!-- ----------------------------------------------------------------------- -->
-## More exciting stuff you can do with this workflow
-
-Here are three little demos of exciting stuff that you can do (and that are facilitated by this workflow).
-
-### Reading bigger files, faster
-
-A few other things will help you with "medium size data":
-
-+ `read_csv` - Much faster than `read.csv` and has better defaults. 
-+ `dbplyr` - For connecting directly to databases. This package got forked off of `dplyr` recently but is very useful.
-+ `feather` - The `feather` package is a fast-loading binary format that is interoperable with python. All you need to know is `write_feather(d, "filename")` and `read_feather("filename")`. 
-
-Here's a timing demo for `read.csv`, `read_csv`, and `read_feather`. 
-
-```{r, eval=FALSE}
-system.time(read.csv("data/ws.csv"))
-system.time(read_csv("data/ws.csv"))
-system.time(feather::read_feather("data/ws.feather"))
-```
-I see about a 2x speedup for `read_csv` (bigger for bigger files) and a 20x speedup for `read_feather`.
-
-### Interactive visualization
-
-The `shiny` package is a great way to do interactives in R. We'll walk through constructing a simple shiny app for the wordbank data here. 
-
-Technically, this is [embedded shiny](http://rmarkdown.rstudio.com/authoring_embedded_shiny.html) as opposed to freestanding shiny apps (like Wordbank). 
-
-The two parts of a shiny app are `ui` and `server`. Both of these are funny in that they are lists of other things. The `ui` is a list of elements of an HTML page, and the server is a list of "reactive" elements. In brief, the UI says what should be shown, and the server specifies the mechanics of how to create those elements. 
-
-This little embedded shiny app shows a page with two elements: 1) a selector that lets you choose a demographic field, and 2) a plot of vocabulary split by that field. 
-
-The server then has the job of splitting the data by that field (for `ws_split`) and rendering the plot (`agePlot`).
-
-The one fancy thing that's going on here is that the app makes use of the calls `group_by_` (in the `dplyr` chain) and `aes_` (for the `ggplot` call). These `_` functions are a little complex - they are an example of "standard evaluation" that lets you feed *actual variables* into `ggplot2` and `dplyr` rather than *names of variables*. For more information, there is a nice vignette on standard and non-standard evaluation: try `(vignette("nse")`.
-
-```{r, eval=FALSE}
-library(shiny)
-shinyApp(
-  ui <- fluidPage(
-    selectInput("demographic", "Demographic Split Variable", 
-                c("Sex" = "sex", "Maternal Education" = "mom_ed",
-                  "Birth Order" = "birth_order", "Ethnicity" = "ethnicity")),
-    plotOutput("agePlot")
-  ),
-  
-  server <- function(input, output) {
-    ws_split <- reactive({
-      ws %>%
-        group_by_("age", input$demographic) %>%
-        summarise(production_mean = mean(production))
-    })
-    
-    output$agePlot <- renderPlot({
-      ggplot(ws_split(), 
-             aes_(quote(age), quote(production_mean), col = as.name(input$demographic))) + 
-        geom_line() 
-    })
-  },
-  
-  options = list(height = 500)
-)
-```
-
-### Function application 
-
-As I've tried to highlight, `tidyverse` is actually all about applying functions. `summarise` is a verb that helps you apply functions to chunks of data and then bind them together. But that creates a requirement that all the functions return a single value (e.g., `mean`). There are lots of things you can do that summarise data but *don't* return a single value. For example, maybe you want to run a linear regression and return the slope *and* the intercept. 
-
-For that, I want to highlight two things. 
-
-One is `do`, which allows function application to grouped data. The only tricky thing about using `do` is that you have to refer to the dataframe that you're working on as `.`. 
-
-The second is the amazing `broom` package, which provides methods to `tidy` the output of lots of different statistical models. So for example, you can run a linear regression on chunks of a dataset and get back out the coefficients in a data frame. 
-
-Here's a toy example, again with Wordbank data. 
-
-```{r, eval=FALSE}
-ws %>%
-  filter(!is.na(sex)) %>%
-  group_by(sex) %>%
-  do(broom::tidy(lm(production ~ age, data = .)))
-```
-
-In recent years, this workflow in R ihas gotten really good. `purrr` is an amazing package that introduces consistent ways to `map` functions. It's beyond the scope of the course. 
-
-# Conclusions
-
-Thanks for taking part. The `tidyverse` has been a transformative tool for me in teaching and doing data analysis. With a little practice it can make many seemingly-difficult tasks surprisingly easy! For example, my entire book was written in a tidyverse idiom ([wordbank book](https://langcog.github.io/wordbank-book/index.html)). 
