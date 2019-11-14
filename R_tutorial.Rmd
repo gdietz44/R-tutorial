@@ -22,7 +22,7 @@ By the end of this tutorial, you will know:
 + What "tidy data" is and why it's an awesome format
 + How to do some stuff with tidy data
 + How to get your data to be tidy
-+ How to run some wdiely-used statistical analyses in R
++ How to run/interpret some widely-used statistical tests in R
 
 In order to do that, we'll start by introducing the concepts of **tidy data** and **functions and pipes**.
 
