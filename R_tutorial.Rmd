@@ -244,10 +244,7 @@ We can compare this to `sgf` and see that we've recovered the original long form
 
 ```
 
-<!-- ----------------------------------------------------------------------- -->
 # Analyses
-
-These extras are fun things to go through at the end of the tutorial, time permitting. Because they require more data and packages, they are set by default not to evaluate if you knit the tutorial. 
 
 ## T-tests
 T tests allow us to compare means between groups. The syntax of a t-test is t.test(y~x,data) where y is the dependent variable and x is the independent variable. That is, is there a difference in y between the two groups in x.
